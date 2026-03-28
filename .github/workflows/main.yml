@@ -1,0 +1,41 @@
+name: Build SAMP APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # Permite rodar manualmente se precisar
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 8
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'zulu' # Zulu costuma ser mais compatível com SAMP
+          cache: gradle
+
+      - name: Permissão no Gradle
+        run: chmod +x gradlew
+
+      - name: Compilar APK (Forçado)
+        # -Dhttps.protocols=TLSv1.2 resolve erros de conexão em Java antigo
+        # --no-build-cache evita erros de metadados corrompidos
+        run: |
+          ./gradlew clean assembleDebug \
+          -Dhttps.protocols=TLSv1.2 \
+          --no-daemon \
+          --no-build-cache \
+          --stacktrace
+
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: samp-debug-apk
+          path: "**/build/outputs/apk/debug/*.apk"
