@@ -1,0 +1,33 @@
+name: Gerar APK SAMP (Auto-Wrapper)
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout da Source
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 8
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'zulu'
+
+      # Passo que resolve a falta dos arquivos wrapper
+      - name: Gerar Gradle Wrapper
+        run: |
+          sudo apt-get install gradle -y
+          gradle wrapper --gradle-version 7.2
+
+      - name: Compilar APK
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug -x lint -x test
+
+      - name: Upload do APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: samp-apk-final
+          path: "**/*.apk"
